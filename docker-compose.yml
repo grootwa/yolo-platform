@@ -1,0 +1,15 @@
+services:
+  # The name of our first service
+  backend:
+    # 1. Tell Docker where to find the 'Recipe' (Dockerfile)
+    build: ./backend
+    
+    # 2. Connect the inside of the box to the outside world
+    # (Inside 8000 -> Outside 8000)
+    ports:
+      - "8000:8000"
+    
+    # 3. The "Mirror" (Volumes)
+    # This keeps your local code and the container code in sync
+    volumes:
+      - ./backend:/app
