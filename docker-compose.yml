@@ -1,4 +1,10 @@
 services:
+  db:
+    image: mongo:latest
+    ports:
+      - "27017:27017"
+    volumes:
+      - mongo_data:/data/db
   # The name of our first service
   backend:
     # 1. Tell Docker where to find the 'Recipe' (Dockerfile)
@@ -8,8 +14,12 @@ services:
     # (Inside 8000 -> Outside 8000)
     ports:
       - "8000:8000"
+    depends_on:
+      - db
     
     # 3. The "Mirror" (Volumes)
     # This keeps your local code and the container code in sync
     volumes:
       - ./backend:/app
+volumes:
+  mongo_data:
