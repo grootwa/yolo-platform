@@ -8,7 +8,7 @@ app = FastAPI()
 
 # connect db 
 
-MONGO_DETAILS = "mongodb://db:27017"
+MONGO_DETAILS = "mongodb://localhost:27017"
 
 # create a client
 client =  AsyncIOMotorClient(MONGO_DETAILS)
@@ -20,7 +20,8 @@ projects_collection = database.get_collection("projects")
 def home():
     return{"message": "hello world !"}
 
-@app.get("/home")
+# check db connection
+@app.get("/check_db")
 async def home():
     try:
         await client.admin.command('ping')
@@ -30,6 +31,7 @@ async def home():
     
     return {"db status": status}
 
+# create a project
 @app.post("/projects")
 async def create_project(project: ProjectModel = Body(...)):
     
@@ -43,6 +45,7 @@ async def create_project(project: ProjectModel = Body(...)):
         "message": "project saved successfully"
     }
 
+# get all projects
 @app.get("/projects")
 async def get_projects():
     projects = []
@@ -55,6 +58,7 @@ async def get_projects():
 
     return projects
 
+# get project by id
 @app.get("/projects/{project_id}")
 async def get_project(project_id: str):
     project = await projects_collection.find_one({"_id": ObjectId(project_id)})
@@ -65,6 +69,7 @@ async def get_project(project_id: str):
         return project
     return {"error": "project not found"}
 
+# delete project
 @app.delete("/projects/{project_id}")
 async def delete_project(project_id: str):
     delete_result = await projects_collection.delete_one({"_id": ObjectId(project_id)})
