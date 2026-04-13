@@ -1,14 +1,21 @@
-from fastapi import FastAPI, Body
+from fastapi import FastAPI, Body, UploadFile, File
 from models import ProjectModel
 from fastapi.encoders import jsonable_encoder
 from motor.motor_asyncio import AsyncIOMotorClient
 from bson import ObjectId
+import os
+from typing import List
+
+# db details 
+MONGO_DETAILS = "mongodb://localhost:27017"
+
+# create upload folder if doesnt exist
+UPLOAD_FOLDER = 'uploads'
+os.makedirs(UPLOAD_FOLDER, exist_ok=True)
+
 
 app = FastAPI()
 
-# connect db 
-
-MONGO_DETAILS = "mongodb://localhost:27017"
 
 # create a client
 client =  AsyncIOMotorClient(MONGO_DETAILS)
@@ -77,3 +84,46 @@ async def delete_project(project_id: str):
     if delete_result.deleted_count == 1:
         return {"message": "Project deleted Sucessfully !"}
     return {"error": "Project Not found"}
+
+@app.post("/projects/{project_id}/upload")
+async def upload_image(project_id: str, file: UploadFile = File(...)):
+    file_path = os.path.join(UPLOAD_FOLDER, f"{project_id}_{file.filename}")
+
+    # save file to disk
+    with open(file_path, "wb") as buffer:
+        buffer.write(await file.read())
+
+    await projects_collection.update_one(
+        {"_id": ObjectId(project_id)},
+        {"$push": {"images": file_path}}
+    )
+
+    return {"filename": file.filename, "status": "Uploaded and linked"}
+
+
+@app.post("/projects/{project_id}/upload-batch")
+async def upload_batch(project_id: str, files: List[UploadFile] = File(...)):
+    uploaded_paths = []
+    
+    # 1. Ensure the project folder exists
+    project_path = os.path.join(UPLOAD_FOLDER, project_id)
+    os.makedirs(project_path, exist_ok=True)
+    
+    for file in files:
+        # 2. Save each file
+        file_path = os.path.join(project_path, file.filename)
+        with open(file_path, "wb") as buffer:
+            buffer.write(await file.read())
+        uploaded_paths.append(file_path)
+    
+    # 3. Update MongoDB once with the whole list (using $each)
+    await projects_collection.update_one(
+        {"_id": ObjectId(project_id)},
+        {"$push": {"images": {"$each": uploaded_paths}}}
+    )
+    
+    return {
+        "status": "Success", 
+        "count": len(uploaded_paths), 
+        "message": f"Uploaded {len(uploaded_paths)} images to project {project_id}"
+    }

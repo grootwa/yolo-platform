@@ -20,5 +20,6 @@ services:
     # This keeps local code and the container code in sync
     volumes:
       - ./backend:/app
+      - ./uploads:/app/uploads
 volumes:
   mongo_data:

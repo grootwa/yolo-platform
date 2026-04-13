@@ -1,0 +1,20 @@
+# Environments
+.env
+.venv
+env/
+
+# Database / Storage
+mongo_data/
+storage/
+datasets/
+uploads/
+test/
+
+# Python leftovers
+__pycache__/
+*.pyc
+
+# Large Model files
+*.pt
+*.weights
+*.onnx
